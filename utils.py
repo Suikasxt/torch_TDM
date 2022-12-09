@@ -5,6 +5,7 @@ import numpy as np
 from copy import deepcopy
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.sampler import WeightedRandomSampler
+from YoutubeDNN_DNN import YoutubeDNN_DNN
 
 class TDMRecDataset(RecDataset):
     def __init__(self, n_user, n_item, user_features, target_items, mode, depth, neg_num=1):
@@ -104,3 +105,15 @@ def generate_data_by_user(dataset, data_dir, batch_size, neg_num, inference_batc
     test_loader = DataLoader(dataset=test_dataset, batch_size=inference_batch_size, shuffle=False,
                              collate_fn=collate_fn)
     return train_loader, valid_loader, test_loader, node_embedding, n_user, n_item, user_input_dim
+
+
+def get_model(num_items, song_embedding, user_input_dim, args):
+    if args.model == 'YoutubeDNN' or args.model == 'DNN':
+        model = YoutubeDNN(n_items=num_items, item_embedding=song_embedding, user_input_dim=user_input_dim,
+                           embedding_size=args.embedding_size, l2_reg=args.l2, dropout=args.dropout)
+    elif args.model == 'YoutubeDNN_DNN':
+        model = YoutubeDNN_DNN(n_items=num_items, item_embedding=song_embedding, user_input_dim=user_input_dim,
+                           embedding_size=args.embedding_size, l2_reg=args.l2, dropout=args.dropout)
+    else:
+        return None
+    return model

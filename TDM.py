@@ -83,13 +83,18 @@ def inference(model, data_loader, tree_data):
         user_features = user_features.to(device)
         user_embeddings = model.user_encoder(user_features).detach().cpu().numpy()
         dim = user_embeddings.shape[1]
-        user_embeddings = np.expand_dims(user_embeddings, 2)
-        #D, I = index_flat.search(user_embedding, k=max_topk)
         I = np.array([[0] for i in range(user_num)])
         for d in range(tree_data['depth']):
-            next_item = np.concatenate((I*2+1, I*2+2), axis=1)
-            score = np.einsum('ijk,ikl->ijl', item_embedding[next_item, :], user_embeddings)
-            score = np.squeeze(score, axis=2)
+            next_item = np.concatenate((I*2+1, I*2+2), axis=1) # (B, K)
+            item_embedding_now = item_embedding[next_item, :] # (B, K, D)
+            if getattr(model, 'get_logits', None) == None:
+                #D, I = index_flat.search(user_embedding, k=max_topk)
+                user_embeddings_reshape = np.expand_dims(user_embeddings, 2)
+                score = np.einsum('ijk,ikl->ijl', item_embedding_now, user_embeddings)
+                score = np.squeeze(score, axis=2)
+            else:
+                user_embeddings_reshape = torch.tensor(user_embeddings).unsqueeze(1).repeat(1, next_item.shape[1], 1).to(device)
+                score = model.get_logits(user_embeddings_reshape, torch.tensor(item_embedding_now).to(device)).detach().cpu().numpy()
             topk_index = np.argsort(-score, axis=1)[:, :max_topk]
             user_index = np.repeat(np.arange(user_num).reshape(-1,1), topk_index.shape[1], axis=-1)
             I = next_item[user_index, topk_index]

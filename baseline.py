@@ -9,8 +9,9 @@ import numpy as np
 import os
 import sys
 sys.path.append('./VQ_DR/deezer')
+from utils import get_model
 import metrics
-from VQ_DR.deezer.utils import generate_data_by_user, get_model, print_result
+from VQ_DR.deezer.utils import generate_data_by_user, print_result
 
 
 parser = argparse.ArgumentParser()
